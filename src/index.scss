@@ -16,6 +16,12 @@
       background-size: cover;
       box-shadow: 0 0 20px #888;
 
+      //transform:rotate(7deg);
+      //-ms-transform:rotate(7deg); 	/* IE 9 */
+      //-moz-transform:rotate(7deg); 	/* Firefox */
+      //-webkit-transform:rotate(7deg); /* Safari 和 Chrome */
+      //-o-transform:rotate(7deg);
+
       .board-row {
         text-align: center;
         //height: 40px;
@@ -37,8 +43,9 @@
 
   .btns {
     width: 300px;
+    z-index: 999;
 
-    div {
+    > div {
       border: 1px solid #999;
       margin-bottom: 10px;
       padding: 0 15px 15px;
@@ -48,6 +55,19 @@
     .player-num {
       button {
         margin: 10px;
+      }
+    }
+
+    .rotate-board {
+      .btn-wrap {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-constent: space-between;
+
+        button {
+          margin-bottom: 10px;
+        }
       }
     }
   }

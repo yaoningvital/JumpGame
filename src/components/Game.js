@@ -9,6 +9,8 @@ class Game extends React.Component {
     super(props)
     this.setCircleRadius = this.setCircleRadius.bind(this)
     this.setCirclesDistance = this.setCirclesDistance.bind(this)
+    this.handleRotateDirectionChange = this.handleRotateDirectionChange.bind(this)
+    this.setRotateDegNum = this.setRotateDegNum.bind(this)
     
     this.state = {
       r: 20, // 棋子半径
@@ -21,6 +23,8 @@ class Game extends React.Component {
         },
       ],
       currentStep: 0,
+      boardRotateDirection: '+', // 棋盘旋转的方向（顺时针+ ，逆时针-）
+      boardRotateDegNum: 0, // 棋盘旋转的角度
     }
   }
   
@@ -38,10 +42,15 @@ class Game extends React.Component {
             handleClickCircle={() => this.handleClickCircle()}
             r={this.state.r}
             a={this.state.a}
+            direction={this.state.boardRotateDirection}
+            degNum={this.state.boardRotateDegNum}
           />
         </div>
         
         <div className="btns">
+          <audio src={clickAudio} id="click-audio">
+            您的浏览器不支持 audio 标签。
+          </audio>
           <div className="set-radius">
             <h4>设置棋子半径大小：（默认20px）</h4>
             <input type="text"
@@ -64,9 +73,20 @@ class Game extends React.Component {
             <button onClick={() => this.choosePlayerNum(5)}>5人玩</button>
             <button onClick={() => this.choosePlayerNum(6)}>6人玩</button>
           </div>
-          <audio src={clickAudio} id="click-audio">
-            您的浏览器不支持 audio 标签。
-          </audio>
+          <div className="rotate-board">
+            <h4>旋转棋盘</h4>
+            <div className="btn-wrap">
+              <select name="" id="" onChange={this.handleRotateDirectionChange}>
+                <option value="+">顺时针</option>
+                <option value="-">逆时针</option>
+              </select>
+              <input type="number"
+                     placeholder="请输入旋转角度"
+                     onKeyUp={this.setRotateDegNum}
+              />
+              <span> °</span>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -118,6 +138,24 @@ class Game extends React.Component {
     if (e.keyCode === 13 && !isNaN(a)) {
       this.setState({
         a: a
+      })
+    }
+  }
+  
+  // 棋盘旋转方向变化
+  handleRotateDirectionChange (e) {
+    console.log('e:', e)
+    console.log('e.target.value:', e.target.value)
+    this.setState({
+      boardRotateDirection: e.target.value
+    })
+  }
+  
+  setRotateDegNum (e) {
+    let deg = Number(e.target.value.trim())
+    if (e.keyCode === 13 && !isNaN(deg)) {
+      this.setState({
+        boardRotateDegNum: deg
       })
     }
   }

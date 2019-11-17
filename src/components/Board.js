@@ -3,18 +3,19 @@ import Circle from "./Circle";
 
 class Board extends React.Component {
   render () {
-    let {circles, handleClickCircle, r, a} = this.props
+    let {circles, handleClickCircle, r, a,direction, degNum} = this.props
     
     let boardWidth = 29.445 * (r + a / 2)  // 棋盘的宽高
     let boardBorderRadius = boardWidth / 2
     let boardRowHeight = 1.732 * (r + a / 2)  // 棋子所在行的高度
-    
+    let transform=`rotate(${direction}${degNum}deg)`
     return (
       <div className="board"
            style={{
              width: boardWidth + 'px',
              height: boardWidth + 'px',
-             borderRadius: boardBorderRadius + 'px'
+             borderRadius: boardBorderRadius + 'px',
+             transform:transform
            }}>
         {
           circles.map((rowArr, rowIndex) => {
