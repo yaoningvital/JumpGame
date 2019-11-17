@@ -12,7 +12,9 @@
       //height: 680px;
       //border-radius: 340px;
       margin: auto;
-      background: url("./assets/images/board-bg2.jpg");
+      background: url("./assets/images/board-bg3.jpg");
+      background-size: cover;
+      box-shadow: 0 0 20px #888;
 
       .board-row {
         text-align: center;
@@ -34,8 +36,14 @@
   }
 
   .btns {
-    width: 250px;
-    background: #ccc;
+    width: 300px;
+
+    div {
+      border: 1px solid #999;
+      margin-bottom: 10px;
+      padding: 0 15px 15px;
+      background: #ddd;
+    }
 
     .player-num {
       button {

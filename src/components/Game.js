@@ -4,13 +4,12 @@ import '../index.scss'
 import { circlesDefault, RED } from '../utils'
 import clickAudio from '../assets/audio/click02.wav'
 
-// console.log('clickAudio:', clickAudio)
-// console.log('tiaoQi:', tiaoQi)
-
-
 class Game extends React.Component {
   constructor (props) {
     super(props)
+    this.setCircleRadius = this.setCircleRadius.bind(this)
+    this.setCirclesDistance = this.setCirclesDistance.bind(this)
+    
     this.state = {
       r: 20, // 棋子半径
       a: 20, // 棋子与同轴线上相邻棋子边缘的最短距离
@@ -43,6 +42,19 @@ class Game extends React.Component {
         </div>
         
         <div className="btns">
+          <div className="set-radius">
+            <h4>设置棋子半径大小：（默认20px）</h4>
+            <input type="text"
+                   onKeyUp={this.setCircleRadius}/><span> px</span>
+          </div>
+          <div>
+            <h4>设置相邻棋子之间的距离：（默认20px）</h4>
+            <input type="text"
+                   onKeyUp={this.setCirclesDistance}
+            />
+            <span> px</span>
+          </div>
+          
           <div className="player-num">
             <h4>请选择玩家数</h4>
             <button onClick={() => this.choosePlayerNum(1)}>1人玩</button>
@@ -59,6 +71,7 @@ class Game extends React.Component {
       </div>
     )
   }
+  
   
   // 选择玩家数
   choosePlayerNum (playerNum) {
@@ -86,6 +99,27 @@ class Game extends React.Component {
   handleClickCircle () {
     let audioEle = document.getElementById('click-audio')
     audioEle.play()
+  }
+  
+  
+  // 设置棋子半径r
+  setCircleRadius (e) {
+    let r = Number(e.target.value.trim())
+    if (e.keyCode === 13 && !isNaN(r)) {
+      this.setState({
+        r: r
+      })
+    }
+  }
+  
+  // 设置相邻棋子之间的距离
+  setCirclesDistance (e) {
+    let a = Number(e.target.value.trim())
+    if (e.keyCode === 13 && !isNaN(a)) {
+      this.setState({
+        a: a
+      })
+    }
   }
 }
 
