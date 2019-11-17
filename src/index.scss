@@ -14,7 +14,7 @@
       margin: auto;
       background: url("./assets/images/board-bg3.jpg");
       background-size: cover;
-      box-shadow: 0 0 20px #888;
+      box-shadow: 0 0 20px #bbb;
 
       //transform:rotate(7deg);
       //-ms-transform:rotate(7deg); 	/* IE 9 */
@@ -32,6 +32,7 @@
           //border-radius: 20px;
           border-style: none;
           outline: none;
+          //background-image: radial-gradient(at 80px 80px, rgba(0,0,0,0), red);
 
           &:hover {
             cursor: pointer;
