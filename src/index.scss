@@ -1,0 +1,46 @@
+.game {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+
+  .board-wrap {
+    flex: 1;
+
+    .board {
+      //width: 680px;
+      //height: 680px;
+      //border-radius: 340px;
+      margin: auto;
+      background: url("./assets/images/board-bg2.jpg");
+
+      .board-row {
+        text-align: center;
+        //height: 40px;
+
+        button {
+          //width: 40px;
+          //height: 40px;
+          //border-radius: 20px;
+          border-style: none;
+          outline: none;
+
+          &:hover {
+            cursor: pointer;
+          }
+        }
+      }
+    }
+  }
+
+  .btns {
+    width: 250px;
+    background: #ccc;
+
+    .player-num {
+      button {
+        margin: 10px;
+      }
+    }
+  }
+}
