@@ -1,7 +1,23 @@
 export const GREY = '#ddd'
 export const RED = 'red'
+export const ORANGE = 'orange'
+export const GREEN = 'green' // 绿
+export const TEAL = 'teal' // 深青
+export const BLUE = 'blue'  // 蓝
+export const PURPLE = 'purple' // 紫
+export const BLACK = 'black'  // 黑
+export const FUCHSIA = 'fuchsia'  // 紫红
+export const MAROON = 'maroon' // 褐
+export const NAVY = 'navy' // 深蓝
+export const OLIVE = 'olive' // 橄榄
+export const BLUEVIOLET = 'BlueViolet' // 蓝紫色
+export const CHOCOLATE = 'Chocolate' // 巧克力色
+export const CORNFLOWERBLUE = 'CornflowerBlue' // 矢车菊蓝
+export const GOLD = 'Gold' // 黄金色
+export const LIGHTSLATEGRAY = 'LightSlateGray' // 浅石板灰
 
-export let circlesDefault = [
+
+export let circlesDefault = [ // 默认全部为灰色
   [ // 一行
     {x: 0, y: 4, z: 4, color: GREY},  // 一个点
   ],
@@ -157,4 +173,25 @@ export let circlesDefault = [
   [
     {x: 16, y: -4, z: 12, color: GREY},
   ]
+]
+
+
+export const COLORS = [
+  RED,
+  ORANGE,
+  GOLD,
+  GREEN,
+  TEAL,
+  BLUE,
+  PURPLE,
+  BLACK,
+  
+  MAROON,
+  FUCHSIA,
+  CHOCOLATE,
+  OLIVE,
+  CORNFLOWERBLUE,
+  NAVY,
+  BLUEVIOLET,
+  LIGHTSLATEGRAY
 ]

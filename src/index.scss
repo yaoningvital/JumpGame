@@ -43,19 +43,49 @@
   }
 
   .btns {
-    width: 300px;
+    width: 400px;
     z-index: 999;
 
     > div {
       border: 1px solid #999;
       margin-bottom: 10px;
-      padding: 0 15px 15px;
+      padding: 0 10px 10px;
       background: #ddd;
+
+      h4 {
+        margin: 15px 0;
+      }
     }
 
     .player-num {
       button {
-        margin: 10px;
+        margin: 6px;
+      }
+    }
+
+    .circles-color-wrap {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+
+      .color-item {
+        cursor: pointer;
+        margin: 0 5px 5px 0;
+
+        input {
+
+        }
+
+        button {
+          width: 20px;
+          height: 20px;
+          border-radius: 10px;
+          border-style: none;
+          outline: none;
+          //cursor: pointer;
+
+        }
       }
     }
 
