@@ -30,7 +30,7 @@ class Game extends React.Component {
       checked: false,
       boardRotateDirection: '+', // 棋盘旋转的方向（顺时针+ ，逆时针-）
       boardRotateDegNum: 0, // 棋盘旋转的角度
-      availableColors: this.initAvailableColors(COLORS)
+      availableColors: this.initAvailableColors(COLORS), // 可选颜色数组
     }
   }
   
@@ -141,7 +141,11 @@ class Game extends React.Component {
   //   }
   // ]
   
-  // 初始化 this.state.availableColors
+  /**
+   * 初始化 this.state.availableColors
+   * @param colors
+   * @returns {[]}
+   */
   initAvailableColors (colors) {
     let availableColors = []
     
@@ -157,21 +161,106 @@ class Game extends React.Component {
     return availableColors
   }
   
-  // 选择玩家数
+  
+  /**
+   * 处理点击 选择玩家数
+   * @param playerNum ：要选择的玩家数
+   */
   choosePlayerNum (playerNum) {
     if (this.state.playing) return // 游戏还没开始，才可以选择玩家数量
     
-    this.setState((state, props) => {
-      return {
-        playerNum: playerNum
+    let availableColors = _.cloneDeep(this.state.availableColors)
+    
+    // 拿到颜色面板中 已经选择的颜色
+    let choosedColorsArr = this.getChoosedColorArr(availableColors)
+    
+    if (choosedColorsArr.length === playerNum) return
+    
+    // A : 如果 已选择颜色数量 > 新给定的玩家数，自动将已选择的颜色中后边多余数量的丢弃
+    if (choosedColorsArr.length > playerNum) {
+      
+      // 拿到 最后剩余的 要选择的 颜色数组 newColorsArr
+      let newColorsArr = choosedColorsArr.slice(0, playerNum)
+      
+      // 1、更新颜色面板 checked
+      for (let colorItem of availableColors) {
+        if (colorItem.checked && !newColorsArr.includes(colorItem.colorValue)) {
+          colorItem.checked = false
+        }
       }
-    }, (params) => {
-      // 更新 颜色面板 disabled 状态
-      this.updateCirclesColorDisabledStatus()
+      
+      // 2、更新颜色面板 disabled
+      availableColors = this.updateDisabled(availableColors, playerNum)
+      
+      // 3、更新棋盘中棋子的颜色
+      this.updateCirclesColorInBoard(newColorsArr)
+      
+    }
+    // B : 如果 已选择颜色数量 < 新给定的玩家数
+    else {
+      // 1、颜色面板 checked 状态 不用更新
+      // 2、更新颜色面板 disabled
+      availableColors = this.updateDisabled(availableColors, playerNum)
+      // 3、棋盘中棋子的颜色不用更新
+    }
+    
+    // 4、更新显示的“当前玩家数”
+    this.setState({
+      playerNum,
+      availableColors
     })
     
   }
+
+  /**
+   *
+   * @param availableColors : 要更新disabled状态的颜色面板数组
+   * @param currentPlayerNum : 当前的玩家数
+   * @returns {*} :更新disabled状态之后的颜色面板数组
+   */
+  updateDisabled (availableColors, currentPlayerNum) {
+    let choosedColorsArr = this.getChoosedColorArr(availableColors) // 已选择的颜色组成的数组
+    let canAddColor; // 是否可以继续追加颜色
+    
+    canAddColor = !(choosedColorsArr.length >= currentPlayerNum)
+    
+    // 如果不能再追加勾选颜色了，把其他没选上的都设置为 disabled=true
+    if (!canAddColor) {
+      for (let colorItem of availableColors) {
+        if (!colorItem.checked) {
+          colorItem.disabled = true
+        }
+      }
+    }
+    // 还能再追加颜色，让所有颜色的 disabled 都为 false
+    else {
+      for (let colorItem of availableColors) {
+        colorItem.disabled = false
+      }
+    }
+    
+    return availableColors
+  }
   
+  /**
+   * 返回当前已选择的颜色组成的数组
+   * @param availableColors : 颜色面板数组
+   * @returns {[]}
+   */
+  getChoosedColorArr (availableColors) {
+    let choosedColors = []
+    for (let colorItem of availableColors) {
+      if (colorItem.checked) {
+        choosedColors.push(colorItem.colorValue)
+      }
+    }
+    
+    return choosedColors
+  }
+  
+  /**
+   * 播放棋盘中棋子放下的声音
+   */
   handleClickCircle () {
     let audioEle = document.getElementById('click-audio')
     audioEle.play()
@@ -183,7 +272,7 @@ class Game extends React.Component {
     let r = Number(e.target.value.trim())
     if (e.keyCode === 13 && !isNaN(r)) {
       this.setState({
-        r: r
+        r
       })
     }
   }
@@ -193,7 +282,7 @@ class Game extends React.Component {
     let a = Number(e.target.value.trim())
     if (e.keyCode === 13 && !isNaN(a)) {
       this.setState({
-        a: a
+        a
       })
     }
   }
@@ -215,11 +304,14 @@ class Game extends React.Component {
     }
   }
   
-  // 选择棋子颜色
+  /**
+   * 处理点击颜色面板的某个颜色
+   * @param color : 点击的颜色
+   */
   chooseCircleColor (color) {
     let availableColors = _.cloneDeep(this.state.availableColors)
     
-    // 更新 颜色面板 checked 状态
+    // 1、更新 颜色面板 checked 状态
     for (let colorItem of availableColors) {
       if (colorItem.colorValue === color) {
         colorItem.checked = !colorItem.checked
@@ -227,63 +319,25 @@ class Game extends React.Component {
       }
     }
     
-    this.setState({
-      availableColors: availableColors
-    }, () => {
-      // 更新 颜色面板 disabled 状态
-      this.updateCirclesColorDisabledStatus()
-      // 更新 棋盘中棋子的颜色
-      this.updateCirclesColorInBoard()
-    })
+    // 2、更新 disabled
+    availableColors = this.updateDisabled(availableColors, this.state.playerNum)
     
-  }
-  
-  
-  // 根据当前选择的玩家数，更新该颜色是否可选的状态 disabled
-  updateCirclesColorDisabledStatus () {
-    let availableColors = _.cloneDeep(this.state.availableColors)
-    
-    let canAddColor; // 是否可以继续追加颜色
-    let checkedNum = 0;  // 已经勾选的颜色数量
-    for (let colorItem of availableColors) {
-      if (colorItem.checked) {
-        checkedNum++
-      }
-    }
-    
-    canAddColor = !(checkedNum >= this.state.playerNum)
-    
-    // 如果不能再追加勾选颜色了，把其他没选上的都设置为 disabled=true
-    if (!canAddColor) {
-      for (let colorItem of availableColors) {
-        if (!colorItem.checked) {
-          colorItem.disabled = true
-        }
-      }
-    }
-    // 还能再追加颜色，让所有颜色的 disabled 都为 false
-    else {
-      for (let colorItem of availableColors) {
-        colorItem.disabled = false
-      }
-    }
+    // 3、更新 棋盘中棋子的颜色
+    let choosedColors = this.getChoosedColorArr(availableColors)
+    this.updateCirclesColorInBoard(choosedColors)
     
     this.setState({
       availableColors
     })
+    
   }
   
-  // 根据当前颜色面板中选择的颜色，更新棋盘中棋子的颜色。游戏开始后就不能更改棋盘中棋子的颜色了
-  updateCirclesColorInBoard () {
+  /**
+   *  根据当前颜色面板中选择的颜色，更新棋盘中棋子的颜色。游戏开始后就不能更改棋盘中棋子的颜色了
+   * @param choosedColors : 颜色面板中已经选择的颜色值组成的数组
+   */
+  updateCirclesColorInBoard (choosedColors) {
     if (this.state.playing) return
-    
-    // 先拿到 现在颜色面板 已经选择的颜色 choosedColors
-    let choosedColors = []
-    for (let colorItem of this.state.availableColors) {
-      if (colorItem.checked) {
-        choosedColors.push(colorItem.colorValue)
-      }
-    }
     
     // 将所有棋子重置为默认状态，然后再设置 已选择的颜色
     this.setState({
@@ -293,184 +347,168 @@ class Game extends React.Component {
         }
       ]
     }, () => {
-      this.setCirclesColorInBoard(choosedColors)
+      // 此时的 this.state.history[0].circles 一定为 circlesDefault ；也可用：
+      // let circles=_.cloneDeep(circlesDefault)
+      let circles = _.cloneDeep(this.state.history[0].circles)
+      
+      // 1、选择的颜色数为 0，则棋盘中棋子颜色不需更新
+      if (choosedColors.length === 0) return
+      
+      // 2、选择了 1 个颜色，设置 南边10子
+      if (choosedColors.length === 1) {
+        for (let i = circles.length - 4; i < circles.length; i++) {
+          for (let j = 0; j < circles[i].length; j++) {
+            circles[i][j].color = choosedColors[0]
+          }
+        }
+      }
+      // 3、选择了 2 个颜色，设置 南边10子 和 北边10子
+      else if (choosedColors.length === 2) {
+        // 设置 南边10子
+        for (let i = circles.length - 4; i < circles.length; i++) {
+          for (let j = 0; j < circles[i].length; j++) {
+            circles[i][j].color = choosedColors[0]
+          }
+        }
+        // 设置 北边10子
+        for (let i = 0; i < 4; i++) {
+          for (let j = 0; j < circles[i].length; j++) {
+            circles[i][j].color = choosedColors[1]
+          }
+        }
+      }
+      // 4、选择了 3 个颜色，设置 南边10子 、西北边10子 、 东北边10子
+      else if (choosedColors.length === 3) {
+        // 设置 南边10子
+        for (let i = circles.length - 4; i < circles.length; i++) {
+          for (let j = 0; j < circles[i].length; j++) {
+            circles[i][j].color = choosedColors[0]
+          }
+        }
+        // 设置 西北边10子
+        for (let i = 4; i < 8; i++) {
+          for (let j = 0; j < 8 - i; j++) {
+            circles[i][j].color = choosedColors[1]
+          }
+        }
+        // 设置 东北边10子
+        for (let i = 4; i < 8; i++) {
+          for (let j = 9; j < 17 - i; j++) {
+            circles[i][j].color = choosedColors[2]
+          }
+        }
+      }
+      // 5、选择了 4 个颜色，设置 南边10子 、西南边10子 、北边10子、 东北边10子
+      else if (choosedColors.length === 4) {
+        // 设置 南边10子
+        for (let i = circles.length - 4; i < circles.length; i++) {
+          for (let j = 0; j < circles[i].length; j++) {
+            circles[i][j].color = choosedColors[0]
+          }
+        }
+        // 设置 西南边10子
+        for (let i = 9; i < 13; i++) {
+          for (let j = 0; j < i - 8; j++) {
+            circles[i][j].color = choosedColors[1]
+          }
+        }
+        // 设置 北边10子
+        for (let i = 0; i < 4; i++) {
+          for (let j = 0; j < circles[i].length; j++) {
+            circles[i][j].color = choosedColors[2]
+          }
+        }
+        // 设置 东北边10子
+        for (let i = 4; i < 8; i++) {
+          for (let j = 9; j < 17 - i; j++) {
+            circles[i][j].color = choosedColors[3]
+          }
+        }
+      }
+      // 6、选择了 5 个颜色，设置 南边10子 、西南边10子 、西北边10子、北边10子、 东北边10子
+      else if (choosedColors.length === 5) {
+        // 设置 南边10子
+        for (let i = circles.length - 4; i < circles.length; i++) {
+          for (let j = 0; j < circles[i].length; j++) {
+            circles[i][j].color = choosedColors[0]
+          }
+        }
+        // 设置 西南边10子
+        for (let i = 9; i < 13; i++) {
+          for (let j = 0; j < i - 8; j++) {
+            circles[i][j].color = choosedColors[1]
+          }
+        }
+        // 设置 西北边10子
+        for (let i = 4; i < 8; i++) {
+          for (let j = 0; j < 8 - i; j++) {
+            circles[i][j].color = choosedColors[2]
+          }
+        }
+        // 设置 北边10子
+        for (let i = 0; i < 4; i++) {
+          for (let j = 0; j < circles[i].length; j++) {
+            circles[i][j].color = choosedColors[3]
+          }
+        }
+        // 设置 东北边10子
+        for (let i = 4; i < 8; i++) {
+          for (let j = 9; j < 17 - i; j++) {
+            circles[i][j].color = choosedColors[4]
+          }
+        }
+      }
+      // 7、选择了 6 个颜色，设置 南边10子 、西南边10子 、西北边10子、北边10子、 东北边10子、东南边10子
+      else if (choosedColors.length === 6) {
+        // 设置 南边10子
+        for (let i = circles.length - 4; i < circles.length; i++) {
+          for (let j = 0; j < circles[i].length; j++) {
+            circles[i][j].color = choosedColors[0]
+          }
+        }
+        // 设置 西南边10子
+        for (let i = 9; i < 13; i++) {
+          for (let j = 0; j < i - 8; j++) {
+            circles[i][j].color = choosedColors[1]
+          }
+        }
+        // 设置 西北边10子
+        for (let i = 4; i < 8; i++) {
+          for (let j = 0; j < 8 - i; j++) {
+            circles[i][j].color = choosedColors[2]
+          }
+        }
+        // 设置 北边10子
+        for (let i = 0; i < 4; i++) {
+          for (let j = 0; j < circles[i].length; j++) {
+            circles[i][j].color = choosedColors[3]
+          }
+        }
+        // 设置 东北边10子
+        for (let i = 4; i < 8; i++) {
+          for (let j = 9; j < 17 - i; j++) {
+            circles[i][j].color = choosedColors[4]
+          }
+        }
+        // 设置 东南边10子
+        for (let i = 9; i < 13; i++) {
+          for (let j = 9; j < i + 1; j++) {
+            circles[i][j].color = choosedColors[5]
+          }
+        }
+      }
+      
+      
+      this.setState({
+        history: [
+          {
+            circles: circles
+          }
+        ]
+      })
       
     })
     
-  }
-  
-  // 根据颜色面板已选择的颜色 choosedColors，设置棋盘中棋子的颜色(此时棋子一定为默认状态 circlesDefault)
-  setCirclesColorInBoard (choosedColors) {
-    // 此时的 this.state.history[0].circles 一定为 circlesDefault ；也可用：
-    // let circles=_.cloneDeep(circlesDefault)
-    let circles = _.cloneDeep(this.state.history[0].circles)
-    
-    // 1、选择的颜色数为 0，则棋盘中棋子颜色不需更新
-    if (choosedColors.length === 0) return
-    
-    // 2、选择了 1 个颜色，设置 南边10子
-    if (choosedColors.length === 1) {
-      for (let i = circles.length - 4; i < circles.length; i++) {
-        for (let j = 0; j < circles[i].length; j++) {
-          circles[i][j].color = choosedColors[0]
-        }
-      }
-    }
-    // 3、选择了 2 个颜色，设置 南边10子 和 北边10子
-    else if (choosedColors.length === 2) {
-      // 设置 南边10子
-      for (let i = circles.length - 4; i < circles.length; i++) {
-        for (let j = 0; j < circles[i].length; j++) {
-          circles[i][j].color = choosedColors[0]
-        }
-      }
-      // 设置 北边10子
-      for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < circles[i].length; j++) {
-          circles[i][j].color = choosedColors[1]
-        }
-      }
-    }
-    // 4、选择了 3 个颜色，设置 南边10子 、西北边10子 、 东北边10子
-    else if (choosedColors.length === 3) {
-      // 设置 南边10子
-      for (let i = circles.length - 4; i < circles.length; i++) {
-        for (let j = 0; j < circles[i].length; j++) {
-          circles[i][j].color = choosedColors[0]
-        }
-      }
-      // 设置 西北边10子
-      for (let i = 4; i < 8; i++) {
-        for (let j = 0; j < 8 - i; j++) {
-          circles[i][j].color = choosedColors[1]
-        }
-      }
-      // 设置 东北边10子
-      for (let i = 4; i < 8; i++) {
-        for (let j = 9; j < 17 - i; j++) {
-          circles[i][j].color = choosedColors[2]
-        }
-      }
-    }
-    // 5、选择了 4 个颜色，设置 南边10子 、西南边10子 、北边10子、 东北边10子
-    else if (choosedColors.length === 4) {
-      // 设置 南边10子
-      for (let i = circles.length - 4; i < circles.length; i++) {
-        for (let j = 0; j < circles[i].length; j++) {
-          circles[i][j].color = choosedColors[0]
-        }
-      }
-      // 设置 西南边10子
-      for (let i = 9; i < 13; i++) {
-        for (let j = 0; j < i - 8; j++) {
-          circles[i][j].color = choosedColors[1]
-        }
-      }
-      // 设置 北边10子
-      for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < circles[i].length; j++) {
-          circles[i][j].color = choosedColors[2]
-        }
-      }
-      // 设置 东北边10子
-      for (let i = 4; i < 8; i++) {
-        for (let j = 9; j < 17 - i; j++) {
-          circles[i][j].color = choosedColors[3]
-        }
-      }
-    }
-    // 6、选择了 5 个颜色，设置 南边10子 、西南边10子 、西北边10子、北边10子、 东北边10子
-    else if (choosedColors.length === 5) {
-      // 设置 南边10子
-      for (let i = circles.length - 4; i < circles.length; i++) {
-        for (let j = 0; j < circles[i].length; j++) {
-          circles[i][j].color = choosedColors[0]
-        }
-      }
-      // 设置 西南边10子
-      for (let i = 9; i < 13; i++) {
-        for (let j = 0; j < i - 8; j++) {
-          circles[i][j].color = choosedColors[1]
-        }
-      }
-      // 设置 西北边10子
-      for (let i = 4; i < 8; i++) {
-        for (let j = 0; j < 8 - i; j++) {
-          circles[i][j].color = choosedColors[2]
-        }
-      }
-      // 设置 北边10子
-      for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < circles[i].length; j++) {
-          circles[i][j].color = choosedColors[3]
-        }
-      }
-      // 设置 东北边10子
-      for (let i = 4; i < 8; i++) {
-        for (let j = 9; j < 17 - i; j++) {
-          circles[i][j].color = choosedColors[4]
-        }
-      }
-    }
-    // 7、选择了 6 个颜色，设置 南边10子 、西南边10子 、西北边10子、北边10子、 东北边10子、东南边10子
-    else if (choosedColors.length === 6) {
-      // 设置 南边10子
-      for (let i = circles.length - 4; i < circles.length; i++) {
-        for (let j = 0; j < circles[i].length; j++) {
-          circles[i][j].color = choosedColors[0]
-        }
-      }
-      // 设置 西南边10子
-      for (let i = 9; i < 13; i++) {
-        for (let j = 0; j < i - 8; j++) {
-          circles[i][j].color = choosedColors[1]
-        }
-      }
-      // 设置 西北边10子
-      for (let i = 4; i < 8; i++) {
-        for (let j = 0; j < 8 - i; j++) {
-          circles[i][j].color = choosedColors[2]
-        }
-      }
-      // 设置 北边10子
-      for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < circles[i].length; j++) {
-          circles[i][j].color = choosedColors[3]
-        }
-      }
-      // 设置 东北边10子
-      for (let i = 4; i < 8; i++) {
-        for (let j = 9; j < 17 - i; j++) {
-          circles[i][j].color = choosedColors[4]
-        }
-      }
-      // 设置 东南边10子
-      for (let i = 9; i < 13; i++) {
-        for (let j = 9; j < i + 1; j++) {
-          circles[i][j].color = choosedColors[5]
-        }
-      }
-    }
-    
-    
-    this.setState({
-      history: [
-        {
-          circles: circles
-        }
-      ]
-    })
-    
-    // this.setState({
-    //   history: [
-    //     {
-    //       circles: circlesDefault
-    //     }
-    //   ]
-    // }, () => {
-    //   this.setCirclesColorInBoard(choosedColors)
-    //
-    // })
   }
 }
 
