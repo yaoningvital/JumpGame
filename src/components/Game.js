@@ -126,6 +126,18 @@ class Game extends React.Component {
               />
               <span> °</span>
             </div>
+            <div className="rotate-preset">
+              <div>
+                <button onClick={() => this.handleRotate('+', 60)}>顺时针转60°</button>
+                <button onClick={() => this.handleRotate('+', 120)}>顺时针转120°</button>
+                <button onClick={() => this.handleRotate('+', 180)}>顺时针转180°</button>
+              </div>
+              <div>
+                <button onClick={() => this.handleRotate('-', 60)}>逆时针转60°</button>
+                <button onClick={() => this.handleRotate('-', 120)}>逆时针转120°</button>
+                <button onClick={() => this.handleRotate('-', 180)}>逆时针转180°</button>
+              </div>
+            </div>
           </div>
         
         </div>
@@ -211,7 +223,7 @@ class Game extends React.Component {
     })
     
   }
-
+  
   /**
    *
    * @param availableColors : 要更新disabled状态的颜色面板数组
@@ -302,6 +314,14 @@ class Game extends React.Component {
         boardRotateDegNum: deg
       })
     }
+  }
+  
+  // 点击预设旋转按钮
+  handleRotate (boardRotateDirection, boardRotateDegNum) {
+    this.setState({
+      boardRotateDirection,
+      boardRotateDegNum
+    })
   }
   
   /**
