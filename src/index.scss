@@ -6,6 +6,7 @@
 
   .board-wrap {
     flex: 1;
+    position: relative;
 
     .board {
       //width: 680px;
@@ -38,6 +39,26 @@
             cursor: pointer;
           }
         }
+      }
+    }
+
+    .status {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      align-items: center;
+
+      span {
+        font-size: 20px;
+      }
+
+      button {
+        border-style: none;
+        outline: none;
       }
     }
   }

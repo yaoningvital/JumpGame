@@ -48,6 +48,15 @@ class Game extends React.Component {
             direction={this.state.boardRotateDirection}
             degNum={this.state.boardRotateDegNum}
           />
+          <div className="status">
+            <span>下一步：</span>
+            <button style={{
+              width: `${this.state.r * 2}px`,
+              height: `${this.state.r * 2}px`,
+              borderRadius: `${this.state.r}px`,
+              backgroundColor: 'red'
+            }}/>
+          </div>
         </div>
         
         <div className="btns">
@@ -138,6 +147,16 @@ class Game extends React.Component {
                 <button onClick={() => this.handleRotate('-', 180)}>逆时针转180°</button>
               </div>
             </div>
+          </div>
+          
+          <div>
+            <h4>历史步骤：</h4>
+            {
+              this.state.history.map((step, move) => {
+                let desc = `回退到第${move}步`
+                return move ? <button>{desc}</button> : null
+              })
+            }
           </div>
         
         </div>
