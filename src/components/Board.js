@@ -3,7 +3,7 @@ import Circle from "./Circle";
 
 class Board extends React.Component {
   render () {
-    let {circles, handleClickCircle, r, a,direction, degNum} = this.props
+    let {circles, handleClickCircle, r, a,direction, degNum,selectedRowIndex,selectedColumnIndex} = this.props
     
     let boardWidth = 29.445 * (r + a / 2)  // 棋盘的宽高
     let boardBorderRadius = boardWidth / 2
@@ -36,6 +36,8 @@ class Board extends React.Component {
                         r={r}
                         a={a}
                         boardRowHeight={boardRowHeight}
+                        selectedRowIndex={selectedRowIndex}
+                        selectedColumnIndex={selectedColumnIndex}
                       />
                     )
                   })

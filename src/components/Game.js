@@ -31,6 +31,8 @@ class Game extends React.Component {
       boardRotateDirection: '+', // 棋盘旋转的方向（顺时针+ ，逆时针-）
       boardRotateDegNum: 0, // 棋盘旋转的角度
       availableColors: this.initAvailableColors(COLORS), // 可选颜色数组
+      selectedRowIndex: null, // 当前选中的棋子所在行的索引
+      selectedColumnIndex: null, // 当前选中的棋子所在列的索引
     }
   }
   
@@ -42,20 +44,22 @@ class Game extends React.Component {
         <div className="board-wrap">
           <Board
             circles={currentCircles}
-            handleClickCircle={() => this.handleClickCircle()}
+            handleClickCircle={(circleData) => this.handleClickCircle(circleData)}
             r={this.state.r}
             a={this.state.a}
             direction={this.state.boardRotateDirection}
             degNum={this.state.boardRotateDegNum}
+            selectedRowIndex={this.state.selectedRowIndex}
+            selectedColumnIndex={this.state.selectedColumnIndex}
           />
           <div className="status">
             <span>下一步：</span>
-            <button style={{
-              width: `${this.state.r * 2}px`,
-              height: `${this.state.r * 2}px`,
-              borderRadius: `${this.state.r}px`,
-              backgroundColor: 'red'
-            }}/>
+            {/*<button style={{*/}
+            {/*  width: `${this.state.r * 2}px`,*/}
+            {/*  height: `${this.state.r * 2}px`,*/}
+            {/*  borderRadius: `${this.state.r}px`,*/}
+            {/*  backgroundColor: 'red'*/}
+            {/*}}/>*/}
           </div>
         </div>
         
@@ -288,15 +292,6 @@ class Game extends React.Component {
     
     return choosedColors
   }
-  
-  /**
-   * 播放棋盘中棋子放下的声音
-   */
-  handleClickCircle () {
-    let audioEle = document.getElementById('click-audio')
-    audioEle.play()
-  }
-  
   
   // 设置棋子半径r
   setCircleRadius (e) {
@@ -549,6 +544,32 @@ class Game extends React.Component {
     })
     
   }
+  
+  
+  /**
+   * 播放棋盘中棋子放下的声音
+   */
+  playAudio () {
+    let audioEle = document.getElementById('click-audio')
+    audioEle.play()
+  }
+  
+  /**
+   * 处理点击棋子
+   */
+  handleClickCircle (circleData) {
+    console.log('circleData:', circleData)
+    // 点击了棋子
+    if (circleData.color !== '#ddd') {
+      console.log(111)
+      this.setState({
+        selectedRowIndex: circleData.rowIndex,
+        selectedColumnIndex: circleData.columnIndex,
+      })
+    }
+    
+  }
+  
 }
 
 export default Game
