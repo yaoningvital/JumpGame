@@ -4,6 +4,8 @@ class Circle extends React.Component {
   render () {
     let {circleData, handleClickCircle, r, a, selectedRowIndex, selectedColumnIndex} = this.props
     
+    // let buttonClassName='able-receive'
+    
     let backgroundImage = `radial-gradient(at 80px 80px, rgba(0,0,0,0), ${circleData.color})`
     let buttonWidth = 2 * r
     let buttonMargin = `0 ${a / 2}px`

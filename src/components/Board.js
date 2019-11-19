@@ -2,6 +2,7 @@ import React from 'react'
 import Circle from "./Circle";
 
 class Board extends React.Component {
+  
   render () {
     let {circles, handleClickCircle, r, a,direction, degNum,selectedRowIndex,selectedColumnIndex} = this.props
     

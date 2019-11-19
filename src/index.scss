@@ -1,3 +1,8 @@
+//@keyframes rotate {
+//  from {transform:rotate(0deg)}
+//  to {transform: rotate(120deg)}
+//}
+
 .game {
   display: flex;
   flex-direction: row;
@@ -9,6 +14,8 @@
     position: relative;
 
     .board {
+      //animation:rotate 1s ease-in-out forwards;
+
       //width: 680px;
       //height: 680px;
       //border-radius: 340px;
@@ -43,6 +50,11 @@
 
           &:hover {
             cursor: pointer;
+          }
+          &.able-receive{
+            background: rgba(255,255,255,1);
+            border: 2px dashed forestgreen;
+            box-shadow:none;
           }
         }
       }
