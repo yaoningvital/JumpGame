@@ -2,7 +2,6 @@ import React from 'react'
 import Board from './Board'
 import '../index.scss'
 import { circlesDefault, COLORS, getChoosedColorArr } from '../utils'
-import clickAudio from '../assets/audio/click02.wav'
 import _ from 'lodash'
 import NextPlayer from "./NextPlayer";
 import PlayerNum from "./operate-area/PlayerNum";
@@ -103,10 +102,6 @@ class Game extends React.Component {
           <SetCirclesDistance
             setCirclesDistance={this.setCirclesDistance}
           />
-          {/*audio*/}
-          <audio src={clickAudio} id="click-audio">
-            您的浏览器不支持 audio 标签。
-          </audio>
         </div>
       </div>
     )
@@ -182,7 +177,9 @@ class Game extends React.Component {
     // 4、更新显示的“当前玩家数”
     this.setState({
       playerNum,
-      availableColors
+      availableColors,
+      currentSelectedCircle: null,
+      ableReceiveCells: []
     })
     
   }
@@ -304,7 +301,9 @@ class Game extends React.Component {
           circles: circlesDefault
         }
       ],
-      cashCirclesArr: [circlesDefault] // 初始的“缓存棋子布局”
+      cashCirclesArr: [circlesDefault], // 初始的“缓存棋子布局”
+      currentSelectedCircle: null,
+      ableReceiveCells: []
     }, () => {
       // 此时的 this.state.history[0].circles 一定为 circlesDefault ；也可用：
       // let circles=_.cloneDeep(circlesDefault)
@@ -464,7 +463,7 @@ class Game extends React.Component {
             circles: circles
           }
         ],
-        cashCirclesArr: [circles] // 设置 初始的“缓存棋子布局”
+        cashCirclesArr: [circles], // 设置 初始的“缓存棋子布局”
       })
       
     })
@@ -486,8 +485,22 @@ class Game extends React.Component {
    * @param ableReceive : 这个点是否是一个当前选中棋子 的 落子点
    */
   handleClickCircle (circleData, ableReceive) {
+    // 颜色还没选完，不能开始游戏
+    let selectedColors = getChoosedColorArr(this.state.availableColors)
+    if (selectedColors.length !== this.state.playerNum) {
+      alert('请先选择棋子颜色')
+      return
+    }
+    
     // A: 点击了棋子
     if (circleData.color !== '#ddd') {
+      // 当前玩家的颜色
+      let currentPlayerColor = selectedColors[(this.state.history.length - 1) % selectedColors.length]
+      
+      if (circleData.color !== currentPlayerColor) { // 点击的不是当前玩家的棋子
+        return
+      }
+      
       // 1、更新 this.state.currentSelectedCircle ，改变被选中的棋子的样式
       this.setState({
         currentSelectedCircle: circleData
@@ -573,10 +586,13 @@ class Game extends React.Component {
     let ableReceiveCells = [] // 当前选中的棋子所有可以落子的点
     // 落子点 分为两种：可以跳到的落子点（简称：跳落子点） 和 可以通过移动一步而达到的落子点（这样的落子点就在选择点的紧挨着的位置，简称：移落子点）
     // 我们知道，一个棋子的一步是可以跳到多个落子点的。
-    // 我们称一个棋子从开始跳 到 跳到 最后的落子点 的这个过程叫做这个棋子的“一步”，
-    // 这一步的第一跳叫“首跳”，后边的所有次跳叫“非首跳”。
-    // a) 对于棋子的 首跳，它的 落子点 包括 跳落子点 和 移落子点
+    // 我们称一个棋子从开始走 到 走到 最后的落子点 的这个过程叫做这个棋子的“一步”，
+    // 这一大步中的第一小步叫“首步”，后边的所有次小步叫“非首步”。
+    // a) 对于棋子的 首步，它的 落子点 包括 跳落子点 和 移落子点
     // b) 对于棋子的 非首跳，它的 落子点 只包括 跳落子点
+    
+    // b) 对于棋子的 非首步，如果它的前一小步是 跳过来 的，那么它的落子点只包括 跳落子点；
+    // c) 对于棋子的 非首步，如果它的前一小步是 移过来 的，那么它的落子点只包括 前一步过来的移落子点；
     
     let cashCircles = _.cloneDeep(this.state.cashCirclesArr[this.state.cashCirclesArr.length - 1])
     
