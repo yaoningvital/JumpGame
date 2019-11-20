@@ -204,3 +204,21 @@ export const COLORS = [
   BLUEVIOLET,
   LIGHTSLATEGRAY
 ]
+
+/**
+ * 返回当前已选择的颜色组成的数组
+ * @param availableColors : 颜色面板数组
+ * @returns {[]}
+ */
+export function getChoosedColorArr (availableColors) {
+  let choosedColors = []
+  for (let colorItem of availableColors) {
+    if (colorItem.checked) {
+      choosedColors.push(colorItem.colorValue)
+    }
+  }
+  
+  return choosedColors
+}
+
+

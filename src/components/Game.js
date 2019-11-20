@@ -1,29 +1,11 @@
 import React from 'react'
 import Board from './Board'
 import '../index.scss'
-import { circlesDefault, COLORS } from '../utils'
+import { circlesDefault, COLORS, getChoosedColorArr } from '../utils'
 import clickAudio from '../assets/audio/click02.wav'
-
 import _ from 'lodash'
-
-// var circles = [
-//   [{x: 1, y: 0}, {x: 1, y: 1}, {x: 1, y: 2}],
-//   [{x: 2, y: 3}, {x: 2, y: 4}, {x: 2, y: 5}],
-//   // [{x: 3, y: 6}, {x: 3, y: 7}, {x: 3, y: 8}],
-// ]
-//
-// var axes = ['x', 'y']
-//
-// for (var axisIndex = 0; axisIndex < axes.length; axisIndex++) {
-//   // console.log(axes[axisIndex])
-//   for (var i = 0; i < circles.length; i++) {
-//     for (var j = 0; j < circles[i].length; j++) {
-//       // console.log(circles[i][j].x)
-//       // console.log(axes[axisIndex])
-//       console.log(circles[i][j][axes[axisIndex]])
-//     }
-//   }
-// }
+import NextPlayer from "./NextPlayer";
+import PlayerNum from "./operate-area/PlayerNum";
 
 
 class Game extends React.Component {
@@ -33,30 +15,31 @@ class Game extends React.Component {
     this.setCirclesDistance = this.setCirclesDistance.bind(this)
     this.handleRotateDirectionChange = this.handleRotateDirectionChange.bind(this)
     this.setRotateDegNum = this.setRotateDegNum.bind(this)
+    this.handleClickCircle = this.handleClickCircle.bind(this)
     
     this.state = {
       r: 20, // 棋子半径
       a: 20, // 棋子与同轴线上相邻棋子边缘的最短距离
       circlesOrigin: circlesDefault,
+      playerNum: 0,// 当前玩家数
+      boardRotateDirection: '+', // 棋盘旋转的方向（顺时针+ ，逆时针-）
+      boardRotateDegNum: 0, // 棋盘旋转的角度
+      availableColors: this.initAvailableColors(COLORS), // 可选颜色数组
+      
+      currentStep: 0,
       history: [
         { // 一条棋盘棋子布局的记录
           circles: circlesDefault
         },
       ],
       cashCirclesArr: [circlesDefault], // 记录下棋过程中的circles，只有在点击“确定”之后，这个数组中的最后一条circles记录才会push到history中
-      currentStep: 0,
-      playerNum: 0,// 当前玩家数
-      checked: false,
-      boardRotateDirection: '+', // 棋盘旋转的方向（顺时针+ ，逆时针-）
-      boardRotateDegNum: 0, // 棋盘旋转的角度
-      availableColors: this.initAvailableColors(COLORS), // 可选颜色数组
-      selectedRowIndex: null, // 当前选中的棋子所在行的索引
-      selectedColumnIndex: null, // 当前选中的棋子所在列的索引
+      currentSelectedCircle: null, // 当前被选中的棋子 {}
+      ableReceiveCells: [], // 当前正在走的棋子 的 落子点
     }
   }
   
   render () {
-    let currentCircles = this.state.history[this.state.currentStep].circles
+    let currentCircles = this.state.cashCirclesArr[this.state.cashCirclesArr.length - 1]
     
     return (
       <div className="game">
@@ -64,43 +47,31 @@ class Game extends React.Component {
         <div className="board-wrap">
           <Board
             circles={currentCircles}
-            handleClickCircle={(circleData) => this.handleClickCircle(circleData)}
+            handleClickCircle={(circleData, ableReceive) => this.handleClickCircle(circleData, ableReceive)}
             r={this.state.r}
             a={this.state.a}
             direction={this.state.boardRotateDirection}
             degNum={this.state.boardRotateDegNum}
-            selectedRowIndex={this.state.selectedRowIndex}
-            selectedColumnIndex={this.state.selectedColumnIndex}
+            currentSelectedCircle={this.state.currentSelectedCircle}
+            ableReceiveCells={this.state.ableReceiveCells}
           />
-          <div className="status">
-            <span>下一步：</span>
-            {/*<button style={{*/}
-            {/*  width: `${this.state.r * 2}px`,*/}
-            {/*  height: `${this.state.r * 2}px`,*/}
-            {/*  borderRadius: `${this.state.r}px`,*/}
-            {/*  backgroundColor: 'red'*/}
-            {/*}}/>*/}
-          </div>
+          
+          {/*下一步指示区*/}
+          <NextPlayer
+            availableColors={this.state.availableColors}
+            history={this.state.history}
+            r={this.state.r}
+          />
         </div>
         
         {/*操作区*/}
         <div className="btns">
           {/*请选择玩家数*/}
-          <div className="player-num">
-            <h4>请选择玩家数</h4>
-            <p>当前玩家数：{this.state.playerNum} 人</p>
-            {
-              [1, 2, 3, 4, 5, 6].map((playerNum) => {
-                return (
-                  <button
-                    key={playerNum}
-                    onClick={() => this.choosePlayerNum(playerNum)}
-                    disabled={this.state.history.length > 1}
-                  >{playerNum}人玩</button>
-                )
-              })
-            }
-          </div>
+          <PlayerNum
+            playerNum={this.state.playerNum}
+            choosePlayerNum={(playerNum) => this.choosePlayerNum(playerNum)}
+            history={this.state.history}
+          />
           {/*请选择棋子颜色*/}
           <div>
             <h4>请选择棋子颜色</h4>
@@ -227,7 +198,7 @@ class Game extends React.Component {
     let availableColors = _.cloneDeep(this.state.availableColors)
     
     // 拿到颜色面板中 已经选择的颜色
-    let choosedColorsArr = this.getChoosedColorArr(availableColors)
+    let choosedColorsArr = getChoosedColorArr(availableColors)
     
     if (choosedColorsArr.length === playerNum) return
     
@@ -274,7 +245,7 @@ class Game extends React.Component {
    * @returns {*} :更新disabled状态之后的颜色面板数组
    */
   updateDisabled (availableColors, currentPlayerNum) {
-    let choosedColorsArr = this.getChoosedColorArr(availableColors) // 已选择的颜色组成的数组
+    let choosedColorsArr = getChoosedColorArr(availableColors) // 已选择的颜色组成的数组
     let canAddColor; // 是否可以继续追加颜色
     
     canAddColor = !(choosedColorsArr.length >= currentPlayerNum)
@@ -297,21 +268,6 @@ class Game extends React.Component {
     return availableColors
   }
   
-  /**
-   * 返回当前已选择的颜色组成的数组
-   * @param availableColors : 颜色面板数组
-   * @returns {[]}
-   */
-  getChoosedColorArr (availableColors) {
-    let choosedColors = []
-    for (let colorItem of availableColors) {
-      if (colorItem.checked) {
-        choosedColors.push(colorItem.colorValue)
-      }
-    }
-    
-    return choosedColors
-  }
   
   // 设置棋子半径r
   setCircleRadius (e) {
@@ -377,7 +333,7 @@ class Game extends React.Component {
     availableColors = this.updateDisabled(availableColors, this.state.playerNum)
     
     // 3、更新 棋盘中棋子的颜色
-    let choosedColors = this.getChoosedColorArr(availableColors)
+    let choosedColors = getChoosedColorArr(availableColors)
     this.updateCirclesColorInBoard(choosedColors)
     
     this.setState({
@@ -576,27 +532,83 @@ class Game extends React.Component {
   
   /**
    * 处理点击棋子
+   * @param circleData : 点击的棋子的相关数据
+   * @param ableReceive : 这个点是否是一个当前选中棋子 的 落子点
    */
-  handleClickCircle (circleData) {
-    // console.log('circleData:', circleData)
-    
+  handleClickCircle (circleData, ableReceive) {
     // A: 点击了棋子
     if (circleData.color !== '#ddd') {
-      // 1、改变被选中的棋子的样式
+      // 1、更新 this.state.currentSelectedCircle ，改变被选中的棋子的样式
       this.setState({
-        selectedRowIndex: circleData.rowIndex,
-        selectedColumnIndex: circleData.columnIndex,
+        currentSelectedCircle: circleData
       })
-      // 2、找到 当前选中的棋子 可以跳到的格子
+      // 2、找到 当前选中的棋子 的落子点
       let ableReceiveCells = this.findAbleReceiveCells(circleData)
+      this.setState({
+        ableReceiveCells
+      })
     }
     
     // B: 点击了空格
-    
+    else {
+      if (ableReceive) { // 点击了落子点
+        let cashCircles = _.cloneDeep(this.state.cashCirclesArr[this.state.cashCirclesArr.length - 1])
+        // 1、把当前选中棋子 变为 空格
+        let selectedToBlankComplete = false // 把选择点 变为 空格 是否已完成
+        for (let i = 0; i < cashCircles.length; i++) {
+          for (let j = 0; j < cashCircles[i].length; j++) {
+            if (
+              cashCircles[i][j].x === this.state.currentSelectedCircle.x &&
+              cashCircles[i][j].y === this.state.currentSelectedCircle.y
+            ) {
+              cashCircles[i][j].color = '#ddd'
+              selectedToBlankComplete = true
+              break
+            }
+          }
+          if (selectedToBlankComplete) {
+            break
+          }
+        }
+        // 2、把 落子点 变成 当前选中棋子的颜色
+        let blankToSelectedComplete = false // 落子点 变 已选择点 是否已完成
+        for (let i = 0; i < cashCircles.length; i++) {
+          for (let j = 0; j < cashCircles[i].length; j++) {
+            if (cashCircles[i][j].x === circleData.x && cashCircles[i][j].y === circleData.y) {
+              cashCircles[i][j].color = this.state.currentSelectedCircle.color
+              blankToSelectedComplete = true
+              break
+            }
+          }
+          if (blankToSelectedComplete) {
+            break
+          }
+        }
+        
+        // 3、更新 当前选择点 currentSelectedCircle
+        let currentSelectedCircle = _.cloneDeep(circleData)
+        currentSelectedCircle.color = this.state.currentSelectedCircle.color
+        
+        // 4、更新 state
+        let cashCirclesArr = _.cloneDeep(this.state.cashCirclesArr)
+        cashCirclesArr.push(cashCircles)
+        
+        this.setState({
+          cashCirclesArr,
+          currentSelectedCircle,
+        }, () => {
+          // 5、找到 新选择点 的 落子点
+          let ableReceiveCells = this.findAbleReceiveCells(currentSelectedCircle)
+          this.setState({
+            ableReceiveCells: ableReceiveCells,
+          })
+        })
+      }
+    }
   }
   
   /**
-   * 返回 当前选中的棋子 可以跳到的 格子 组成的数组
+   * 返回 当前选中的棋子 的 落子点
    * @param selectedCircle :当前选中的棋子
    */
   // var selectedCircle = {
@@ -735,103 +747,6 @@ class Game extends React.Component {
     }
     
     return ableReceiveCells
-    
-    
-    // // 先找这个棋子的 跳落子点
-    // let circlesLeft = [] // 与选择的棋子 在同一条x轴上的  在它左边的 棋子
-    // let circlesRight = [] // 与选择的棋子 在同一条x轴上的  在它右边的 棋子
-    //
-    // for (let i = 0; i < cashCircles.length; i++) {
-    //   for (let j = 0; j < cashCircles[i].length; j++) {
-    //     if (cashCircles[i][j].x === selectedCircle.x && cashCircles[i][j].color !== '#ddd') {
-    //       // 在选择点 左边的棋子
-    //       if (cashCircles[i][j].y < selectedCircle.y) {
-    //         circlesLeft.push(cashCircles[i][j])
-    //       }
-    //       // 在选择点 右边的棋子
-    //       else if (cashCircles[i][j].y > selectedCircle.y) {
-    //         circlesRight.push(cashCircles[i][j])
-    //       }
-    //     }
-    //   }
-    // }
-    
-    // // 找棋子左边的 跳落子点
-    // if (circlesLeft.length > 0) {
-    //   // a) 找到左边的桥点
-    //   let circlesLeftNearest = circlesLeft[circlesLeft.length - 1]
-    //
-    //   // b) 计算基于 桥点 向左边跳的话，下一步会跳到哪个位置（简称：基于 桥点 找 目标点）
-    //   let distance = selectedCircle.y - circlesLeftNearest.y
-    //   let goalY = circlesLeftNearest.y - distance  // 目标点的 y值
-    //   let goalX = selectedCircle.x // 目标点的 x 值
-    //
-    //   // c) 判断目标点是否可以落子
-    //   for (let i = 0; i < cashCircles.length; i++) {
-    //     for (let j = 0; j < cashCircles[i].length; j++) {
-    //       if (cashCircles[i][j].x === goalX && cashCircles[i][j].y === goalY && cashCircles[i][j].color === '#ddd') {
-    //         // 棋盘中存在这个点，并且这个点是一个空格
-    //         // 判断这个 目标点 和 桥点 之间是否还有棋子
-    //         let exist = false // 默认 目标点 和 桥点 之间没有棋子
-    //         for (let i = 0; i < circlesLeft.length - 1; i++) {
-    //           if (circlesLeft[i].y > goalY && circlesLeft[i].y < circlesLeftNearest.y) {
-    //             exist = true
-    //             break
-    //           }
-    //         }
-    //         if (!exist) { // 目标点 和 桥点 之间没有棋子，那么这个目标点就是一个可以落子的点
-    //           ableReceiveCells.push(cashCircles[i][j])
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
-    
-    // // 找棋子右边的 跳落子点
-    // if (circlesRight.length > 0) {
-    //   // a) 找右边的桥点
-    //   let circlesRightNearest = circlesRight[0]
-    //
-    //   // b) 基于 桥点 找 目标点
-    //   let distance = circlesRightNearest.y - selectedCircle.y
-    //   let goalY = circlesRightNearest.y + distance  // 目标点的 y值
-    //   let goalX = selectedCircle.x // 目标点的 x 值
-    //
-    //   // c) 判断目标点是否可以落子
-    //   for (let i = 0; i < cashCircles.length; i++) {
-    //     for (let j = 0; j < cashCircles[i].length; j++) {
-    //       if (cashCircles[i][j].x === goalX && cashCircles[i][j].y === goalY && cashCircles[i][j].color === '#ddd') {
-    //         // 棋盘中存在这个点，并且这个点是一个空格
-    //         // 判断这个 目标点 和 桥点 之间是否还有棋子
-    //         let exist = false // 默认 目标点 和 桥点 之间没有棋子
-    //         for (let i = 1; i < circlesRight.length; i++) {
-    //           if (circlesRight[i].y > circlesRightNearest.y && circlesRight[i].y < goalY) {
-    //             exist = true
-    //             break
-    //           }
-    //         }
-    //         if (!exist) { // 目标点 和 桥点 之间没有棋子，那么这个目标点就是一个可以落子的点
-    //           ableReceiveCells.push(cashCircles[i][j])
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
-    
-    // //  这一跳是这个棋子的 首跳，还要把 移落子点 加进去
-    // if (this.state.cashCirclesArr.length === 1) {
-    //   for (let i = 0; i < cashCircles.length; i++) {
-    //     for (let j = 0; j < cashCircles[i].length; j++) {
-    //       if (
-    //         cashCircles[i][j].x === selectedCircle.x &&   // 跟选择点在同一个x轴上
-    //         cashCircles[i][j].color === '#ddd' &&   // 是一个空格
-    //         Math.abs(cashCircles[i][j].y - selectedCircle.y) === 1  // 在选择点相邻的格子
-    //       ) { // 那么这一个点 就是 移落子点
-    //         ableReceiveCells.push(cashCircles[i][j])
-    //       }
-    //     }
-    //   }
-    // }
   }
   
   

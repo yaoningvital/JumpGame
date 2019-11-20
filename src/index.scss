@@ -51,10 +51,11 @@
           &:hover {
             cursor: pointer;
           }
-          &.able-receive{
-            background: rgba(255,255,255,1);
+
+          &.able-receive {
+            background: rgba(255, 255, 255, 1);
             border: 2px dashed forestgreen;
-            box-shadow:none;
+            box-shadow: none;
           }
         }
       }
@@ -77,6 +78,7 @@
       button {
         border-style: none;
         outline: none;
+        margin: 3px;
       }
     }
   }
