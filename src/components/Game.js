@@ -10,6 +10,7 @@ import ChooseColorsArea from "./operate-area/ChooseColorsArea";
 import RotateBoard from "./operate-area/RotateBoard";
 import HistorySteps from "./operate-area/HistorySteps";
 import SetRadius from "./operate-area/SetRadius";
+import SetCirclesDistance from "./operate-area/SetCirclesDistance";
 
 
 class Game extends React.Component {
@@ -99,13 +100,9 @@ class Game extends React.Component {
             setCircleRadius={this.setCircleRadius}
           />
           {/*设置相邻棋子之间的距离*/}
-          <div>
-            <h4>设置相邻棋子之间的距离：（默认20px）</h4>
-            <input type="text"
-                   onKeyUp={this.setCirclesDistance}
-            />
-            <span> px</span>
-          </div>
+          <SetCirclesDistance
+            setCirclesDistance={this.setCirclesDistance}
+          />
           {/*audio*/}
           <audio src={clickAudio} id="click-audio">
             您的浏览器不支持 audio 标签。
