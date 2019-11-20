@@ -8,6 +8,7 @@ import NextPlayer from "./NextPlayer";
 import PlayerNum from "./operate-area/PlayerNum";
 import ChooseColorsArea from "./operate-area/ChooseColorsArea";
 import RotateBoard from "./operate-area/RotateBoard";
+import HistorySteps from "./operate-area/HistorySteps";
 
 
 class Game extends React.Component {
@@ -89,15 +90,9 @@ class Game extends React.Component {
             handleRotate={this.handleRotate}
           />
           {/*历史步骤*/}
-          <div>
-            <h4>历史步骤：</h4>
-            {
-              this.state.history.map((step, move) => {
-                let desc = `回退到第${move}步`
-                return move ? <button>{desc}</button> : null
-              })
-            }
-          </div>
+          <HistorySteps
+            history={this.state.history}
+          />
           {/*设置棋子半径大小*/}
           <div className="set-radius">
             <h4>设置棋子半径大小：（默认20px）</h4>
