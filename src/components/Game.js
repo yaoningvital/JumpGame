@@ -9,6 +9,7 @@ import PlayerNum from "./operate-area/PlayerNum";
 import ChooseColorsArea from "./operate-area/ChooseColorsArea";
 import RotateBoard from "./operate-area/RotateBoard";
 import HistorySteps from "./operate-area/HistorySteps";
+import SetRadius from "./operate-area/SetRadius";
 
 
 class Game extends React.Component {
@@ -94,11 +95,9 @@ class Game extends React.Component {
             history={this.state.history}
           />
           {/*设置棋子半径大小*/}
-          <div className="set-radius">
-            <h4>设置棋子半径大小：（默认20px）</h4>
-            <input type="text"
-                   onKeyUp={this.setCircleRadius}/><span> px</span>
-          </div>
+          <SetRadius
+            setCircleRadius={this.setCircleRadius}
+          />
           {/*设置相邻棋子之间的距离*/}
           <div>
             <h4>设置相邻棋子之间的距离：（默认20px）</h4>
