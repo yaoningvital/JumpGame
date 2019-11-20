@@ -6,6 +6,25 @@ import clickAudio from '../assets/audio/click02.wav'
 
 import _ from 'lodash'
 
+// var circles = [
+//   [{x: 1, y: 0}, {x: 1, y: 1}, {x: 1, y: 2}],
+//   [{x: 2, y: 3}, {x: 2, y: 4}, {x: 2, y: 5}],
+//   // [{x: 3, y: 6}, {x: 3, y: 7}, {x: 3, y: 8}],
+// ]
+//
+// var axes = ['x', 'y']
+//
+// for (var axisIndex = 0; axisIndex < axes.length; axisIndex++) {
+//   // console.log(axes[axisIndex])
+//   for (var i = 0; i < circles.length; i++) {
+//     for (var j = 0; j < circles[i].length; j++) {
+//       // console.log(circles[i][j].x)
+//       // console.log(axes[axisIndex])
+//       console.log(circles[i][j][axes[axisIndex]])
+//     }
+//   }
+// }
+
 
 class Game extends React.Component {
   constructor (props) {
@@ -24,7 +43,7 @@ class Game extends React.Component {
           circles: circlesDefault
         },
       ],
-      cashCircles: circlesDefault, // 记录下棋过程中的circles，只有在点击“确定”之后这个记录才会push到history中
+      cashCirclesArr: [circlesDefault], // 记录下棋过程中的circles，只有在点击“确定”之后，这个数组中的最后一条circles记录才会push到history中
       currentStep: 0,
       playerNum: 0,// 当前玩家数
       checked: false,
@@ -379,7 +398,7 @@ class Game extends React.Component {
           circles: circlesDefault
         }
       ],
-      cashCircles: circlesDefault // 初始的“缓存棋子布局”
+      cashCirclesArr: [circlesDefault] // 初始的“缓存棋子布局”
     }, () => {
       // 此时的 this.state.history[0].circles 一定为 circlesDefault ；也可用：
       // let circles=_.cloneDeep(circlesDefault)
@@ -539,7 +558,7 @@ class Game extends React.Component {
             circles: circles
           }
         ],
-        cashCircles: circles // 设置 初始的“缓存棋子布局”
+        cashCirclesArr: [circles] // 设置 初始的“缓存棋子布局”
       })
       
     })
@@ -569,7 +588,7 @@ class Game extends React.Component {
         selectedColumnIndex: circleData.columnIndex,
       })
       // 2、找到 当前选中的棋子 可以跳到的格子
-      this.findAbleReceiveCells(circleData)
+      let ableReceiveCells = this.findAbleReceiveCells(circleData)
     }
     
     // B: 点击了空格
@@ -590,59 +609,124 @@ class Game extends React.Component {
   // }
   findAbleReceiveCells (selectedCircle) {
     let ableReceiveCells = [] // 当前选中的棋子所有可以落子的点
-    let cashCircles = _.cloneDeep(this.state.cashCircles)
+    // 落子点 分为两种：可以跳到的落子点（简称：跳落子点） 和 可以通过移动一步而达到的落子点（这样的落子点就在选择点的紧挨着的位置，简称：移落子点）
+    // 我们知道，一个棋子的一步是可以跳到多个落子点的。
+    // 我们称一个棋子从开始跳 到 跳到 最后的落子点 的这个过程叫做这个棋子的“一步”，
+    // 这一步的第一跳叫“首跳”，后边的所有次跳叫“非首跳”。
+    // a) 对于棋子的 首跳，它的 落子点 包括 跳落子点 和 移落子点
+    // b) 对于棋子的 非首跳，它的 落子点 只包括 跳落子点
     
-    let circlesLeft = [] // 与选择的棋子 在同一条x轴上的  在它左边的 棋子
-    let circlesRight = [] // 与选择的棋子 在同一条x轴上的  在它右边的 棋子
-    // let leftNeighborIsBlank = false // 选择点 左边的 相邻点 是不是一个空格
+    let cashCircles = _.cloneDeep(this.state.cashCirclesArr[this.state.cashCirclesArr.length - 1])
     
-    
-    for (let i = 0; i < cashCircles.length; i++) {
-      for (let j = 0; j < cashCircles[i].length; j++) {
-        if (cashCircles[i][j].x === selectedCircle.x && cashCircles[i][j].color !== '#ddd') {
-          // 在选择点 左边的棋子
-          if (cashCircles[i][j].y < selectedCircle.y) {
-            circlesLeft.push(cashCircles[i][j])
-          }
-          // 在选择点 右边的棋子
-          else if (cashCircles[i][j].y > selectedCircle.y) {
-            circlesRight.push(cashCircles[i][j])
-          }
-        }
-        
-        // 与选择点在同一条x轴上、位于选择点的左边一个、并且是一个空格
-        // if (cashCircles[i][j].x === selectedCircle.x &&
-        //   cashCircles[i][j].y + 1 === selectedCircle.y &&
-        //   cashCircles[i][j].color === '#ddd') {
-        //   leftNeighborIsBlank = true
-        // }
-      }
-    }
-    
-    // 左边有棋子
-    if (circlesLeft.length > 0) {
-      // a) 找到左边的桥点
-      let circlesLeftNearest = circlesLeft[circlesLeft.length - 1]
+    let axes = ['x', 'y', 'z']
+    for (let axisIndex = 0; axisIndex < axes.length; axisIndex++) {
+      let nextAxisIndex = (axisIndex + 1) % axes.length // 当前处理的轴后面的轴，如果当前处理轴是z，那么它后面的轴是x
       
-      // b) 计算基于 桥点 向左边跳的话，下一步会跳到哪个位置（简称：基于 桥点 找 目标点）
-      let distance = selectedCircle.y - circlesLeftNearest.y
-      let goalY = circlesLeftNearest.y - distance  // 目标点的 y值
-      let goalX = selectedCircle.x // 目标点的 x 值
+      // 先找这个棋子的 跳落子点
+      let circlesLeft = [] // 与选择的棋子 在同一条当前处理上的  在它左边的 棋子
+      let circlesRight = [] // 与选择的棋子 在同一条当前处理轴上的  在它右边的 棋子
       
-      // c) 判断目标点是否可以落子
       for (let i = 0; i < cashCircles.length; i++) {
         for (let j = 0; j < cashCircles[i].length; j++) {
-          if (cashCircles[i][j].x === goalX && cashCircles[i][j].y === goalY && cashCircles[i][j].color === '#ddd') {
-            // 棋盘中存在这个点，并且这个点是一个空格
-            // 判断这个 目标点 和 桥点 之间是否还有棋子
-            let exist = false // 默认 目标点 和 桥点 之间没有棋子
-            for (let i = 0; i < circlesLeft.length - 1; i++) {
-              if (circlesLeft[i].y > goalY && circlesLeft[i].y < circlesLeftNearest.y) {
-                exist = true
-                break
+          if (cashCircles[i][j][axes[axisIndex]] === selectedCircle[axes[axisIndex]] && cashCircles[i][j].color !== '#ddd') {
+            
+            // 在选择点 左边的棋子
+            if (cashCircles[i][j][axes[nextAxisIndex]] < selectedCircle[axes[nextAxisIndex]]) {
+              circlesLeft.push(cashCircles[i][j])
+            }
+            // 在选择点 右边的棋子
+            else if (cashCircles[i][j][axes[nextAxisIndex]] > selectedCircle[axes[nextAxisIndex]]) {
+              circlesRight.push(cashCircles[i][j])
+            }
+          }
+        }
+      }
+      
+      // 找棋子左边的 跳落子点
+      if (circlesLeft.length > 0) {
+        // a) 找到左边的桥点
+        let circlesLeftNearest = circlesLeft[circlesLeft.length - 1]
+        
+        // b) 计算基于 桥点 向左边跳的话，下一步会跳到哪个位置（简称：基于 桥点 找 目标点）
+        let distance = selectedCircle[axes[nextAxisIndex]] - circlesLeftNearest[axes[nextAxisIndex]]
+        let goalNextAxis = circlesLeftNearest[axes[nextAxisIndex]] - distance  // 目标点的 另外一个轴的值（取的是轴数组中当前处理轴的后面那个轴）
+        let goalCurrentAxis = selectedCircle[axes[axisIndex]] // 目标点的 当前处理轴的 值
+        
+        // c) 判断目标点是否可以落子
+        for (let i = 0; i < cashCircles.length; i++) {
+          for (let j = 0; j < cashCircles[i].length; j++) {
+            if (
+              cashCircles[i][j][axes[axisIndex]] === goalCurrentAxis &&
+              cashCircles[i][j][axes[nextAxisIndex]] === goalNextAxis &&
+              cashCircles[i][j].color === '#ddd'
+            ) {
+              // 棋盘中存在这个点，并且这个点是一个空格
+              // 判断这个 目标点 和 桥点 之间是否还有棋子
+              let exist = false // 默认 目标点 和 桥点 之间没有棋子
+              for (let i = 0; i < circlesLeft.length - 1; i++) {
+                if (circlesLeft[i][axes[nextAxisIndex]] > goalNextAxis &&
+                  circlesLeft[i][axes[nextAxisIndex]] < circlesLeftNearest[axes[nextAxisIndex]]) {
+                  exist = true
+                  break
+                }
+              }
+              if (!exist) { // 目标点 和 桥点 之间没有棋子，那么这个目标点就是一个可以落子的点
+                ableReceiveCells.push(cashCircles[i][j])
               }
             }
-            if (!exist) { // 目标点 和 桥点 之间没有棋子，那么这个目标点就是一个可以落子的点
+          }
+        }
+      }
+      
+      
+      // 找棋子右边的 跳落子点
+      if (circlesRight.length > 0) {
+        // a) 找右边的桥点
+        let circlesRightNearest = circlesRight[0]
+        
+        // b) 基于 桥点 找 目标点
+        let distance = circlesRightNearest[axes[nextAxisIndex]] - selectedCircle[axes[nextAxisIndex]]
+        let goalNextAxis = circlesRightNearest[axes[nextAxisIndex]] + distance  // 目标点的 另外一个轴的值（取的是轴数组中当前处理轴的后面那个轴）
+        let goalCurrentAxis = selectedCircle[axes[axisIndex]] // 目标点的 当前处理轴的 值
+        
+        // c) 判断目标点是否可以落子
+        for (let i = 0; i < cashCircles.length; i++) {
+          for (let j = 0; j < cashCircles[i].length; j++) {
+            if (
+              cashCircles[i][j][axes[axisIndex]] === goalCurrentAxis &&
+              cashCircles[i][j][axes[nextAxisIndex]] === goalNextAxis &&
+              cashCircles[i][j].color === '#ddd'
+            ) {
+              // 棋盘中存在这个点，并且这个点是一个空格
+              // 判断这个 目标点 和 桥点 之间是否还有棋子
+              let exist = false // 默认 目标点 和 桥点 之间没有棋子
+              for (let i = 1; i < circlesRight.length; i++) {
+                if (
+                  circlesRight[i][axes[nextAxisIndex]] > circlesRightNearest[axes[nextAxisIndex]] &&
+                  circlesRight[i][axes[nextAxisIndex]] < goalNextAxis
+                ) {
+                  exist = true
+                  break
+                }
+              }
+              if (!exist) { // 目标点 和 桥点 之间没有棋子，那么这个目标点就是一个可以落子的点
+                ableReceiveCells.push(cashCircles[i][j])
+              }
+            }
+          }
+        }
+      }
+      
+      
+      //  如果这一跳是这个棋子的 首跳，还要把 在当前处理轴上的 移落子点 加进去
+      if (this.state.cashCirclesArr.length === 1) { // 首跳
+        for (let i = 0; i < cashCircles.length; i++) {
+          for (let j = 0; j < cashCircles[i].length; j++) {
+            if (
+              cashCircles[i][j][axes[axisIndex]] === selectedCircle[axes[axisIndex]] &&   // 跟选择点在同一个 当前处理轴 上
+              cashCircles[i][j].color === '#ddd' &&   // 是一个空格
+              Math.abs(cashCircles[i][j][axes[nextAxisIndex]] - selectedCircle[axes[nextAxisIndex]]) === 1  // 在选择点相邻的格子
+            ) { // 那么这一个点 就是 移落子点
               ableReceiveCells.push(cashCircles[i][j])
             }
           }
@@ -650,46 +734,106 @@ class Game extends React.Component {
       }
     }
     
-    // 左边相邻点（与选择点的左边紧挨着的）是空格
-    // if () {
+    return ableReceiveCells
+    
+    
+    // // 先找这个棋子的 跳落子点
+    // let circlesLeft = [] // 与选择的棋子 在同一条x轴上的  在它左边的 棋子
+    // let circlesRight = [] // 与选择的棋子 在同一条x轴上的  在它右边的 棋子
     //
-    //
+    // for (let i = 0; i < cashCircles.length; i++) {
+    //   for (let j = 0; j < cashCircles[i].length; j++) {
+    //     if (cashCircles[i][j].x === selectedCircle.x && cashCircles[i][j].color !== '#ddd') {
+    //       // 在选择点 左边的棋子
+    //       if (cashCircles[i][j].y < selectedCircle.y) {
+    //         circlesLeft.push(cashCircles[i][j])
+    //       }
+    //       // 在选择点 右边的棋子
+    //       else if (cashCircles[i][j].y > selectedCircle.y) {
+    //         circlesRight.push(cashCircles[i][j])
+    //       }
+    //     }
+    //   }
     // }
     
-    // 右边有棋子
-    if (circlesRight.length > 0) {
-      // a) 找右边的桥点
-      let circlesRightNearest = circlesRight[0]
-      
-      // b) 基于 桥点 找 目标点
-      let distance = circlesRightNearest.y - selectedCircle.y
-      let goalY = circlesRightNearest.y + distance  // 目标点的 y值
-      let goalX = selectedCircle.x // 目标点的 x 值
-      
-      // c) 判断目标点是否可以落子
-      for (let i = 0; i < cashCircles.length; i++) {
-        for (let j = 0; j < cashCircles[i].length; j++) {
-          if (cashCircles[i][j].x === goalX && cashCircles[i][j].y === goalY && cashCircles[i][j].color === '#ddd') {
-            // 棋盘中存在这个点，并且这个点是一个空格
-            // 判断这个 目标点 和 桥点 之间是否还有棋子
-            let exist = false // 默认 目标点 和 桥点 之间没有棋子
-            for (let i = 1; i < circlesRight.length; i++) {
-              if (circlesRight[i].y > circlesRightNearest.y && circlesRight[i].y < goalY) {
-                exist = true
-                break
-              }
-            }
-            if (!exist) { // 目标点 和 桥点 之间没有棋子，那么这个目标点就是一个可以落子的点
-              ableReceiveCells.push(cashCircles[i][j])
-            }
-          }
-        }
-      }
-    }
+    // // 找棋子左边的 跳落子点
+    // if (circlesLeft.length > 0) {
+    //   // a) 找到左边的桥点
+    //   let circlesLeftNearest = circlesLeft[circlesLeft.length - 1]
+    //
+    //   // b) 计算基于 桥点 向左边跳的话，下一步会跳到哪个位置（简称：基于 桥点 找 目标点）
+    //   let distance = selectedCircle.y - circlesLeftNearest.y
+    //   let goalY = circlesLeftNearest.y - distance  // 目标点的 y值
+    //   let goalX = selectedCircle.x // 目标点的 x 值
+    //
+    //   // c) 判断目标点是否可以落子
+    //   for (let i = 0; i < cashCircles.length; i++) {
+    //     for (let j = 0; j < cashCircles[i].length; j++) {
+    //       if (cashCircles[i][j].x === goalX && cashCircles[i][j].y === goalY && cashCircles[i][j].color === '#ddd') {
+    //         // 棋盘中存在这个点，并且这个点是一个空格
+    //         // 判断这个 目标点 和 桥点 之间是否还有棋子
+    //         let exist = false // 默认 目标点 和 桥点 之间没有棋子
+    //         for (let i = 0; i < circlesLeft.length - 1; i++) {
+    //           if (circlesLeft[i].y > goalY && circlesLeft[i].y < circlesLeftNearest.y) {
+    //             exist = true
+    //             break
+    //           }
+    //         }
+    //         if (!exist) { // 目标点 和 桥点 之间没有棋子，那么这个目标点就是一个可以落子的点
+    //           ableReceiveCells.push(cashCircles[i][j])
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
     
-    // 右边相邻点 为空格
+    // // 找棋子右边的 跳落子点
+    // if (circlesRight.length > 0) {
+    //   // a) 找右边的桥点
+    //   let circlesRightNearest = circlesRight[0]
+    //
+    //   // b) 基于 桥点 找 目标点
+    //   let distance = circlesRightNearest.y - selectedCircle.y
+    //   let goalY = circlesRightNearest.y + distance  // 目标点的 y值
+    //   let goalX = selectedCircle.x // 目标点的 x 值
+    //
+    //   // c) 判断目标点是否可以落子
+    //   for (let i = 0; i < cashCircles.length; i++) {
+    //     for (let j = 0; j < cashCircles[i].length; j++) {
+    //       if (cashCircles[i][j].x === goalX && cashCircles[i][j].y === goalY && cashCircles[i][j].color === '#ddd') {
+    //         // 棋盘中存在这个点，并且这个点是一个空格
+    //         // 判断这个 目标点 和 桥点 之间是否还有棋子
+    //         let exist = false // 默认 目标点 和 桥点 之间没有棋子
+    //         for (let i = 1; i < circlesRight.length; i++) {
+    //           if (circlesRight[i].y > circlesRightNearest.y && circlesRight[i].y < goalY) {
+    //             exist = true
+    //             break
+    //           }
+    //         }
+    //         if (!exist) { // 目标点 和 桥点 之间没有棋子，那么这个目标点就是一个可以落子的点
+    //           ableReceiveCells.push(cashCircles[i][j])
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
     
+    // //  这一跳是这个棋子的 首跳，还要把 移落子点 加进去
+    // if (this.state.cashCirclesArr.length === 1) {
+    //   for (let i = 0; i < cashCircles.length; i++) {
+    //     for (let j = 0; j < cashCircles[i].length; j++) {
+    //       if (
+    //         cashCircles[i][j].x === selectedCircle.x &&   // 跟选择点在同一个x轴上
+    //         cashCircles[i][j].color === '#ddd' &&   // 是一个空格
+    //         Math.abs(cashCircles[i][j].y - selectedCircle.y) === 1  // 在选择点相邻的格子
+    //       ) { // 那么这一个点 就是 移落子点
+    //         ableReceiveCells.push(cashCircles[i][j])
+    //       }
+    //     }
+    //   }
+    // }
   }
+  
   
 }
 
