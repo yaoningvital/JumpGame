@@ -6,6 +6,7 @@ import clickAudio from '../assets/audio/click02.wav'
 import _ from 'lodash'
 import NextPlayer from "./NextPlayer";
 import PlayerNum from "./operate-area/PlayerNum";
+import ChooseColorsArea from "./operate-area/ChooseColorsArea";
 
 
 class Game extends React.Component {
@@ -73,34 +74,12 @@ class Game extends React.Component {
             history={this.state.history}
           />
           {/*请选择棋子颜色*/}
-          <div>
-            <h4>请选择棋子颜色</h4>
-            <div className="circles-color-wrap">
-              {
-                this.state.availableColors.map((colorItem, index) => {
-                  return (
-                    <div key={index}
-                         className="color-item">
-                      <input
-                        type="checkbox"
-                        onChange={() => this.chooseCircleColor(colorItem.colorValue)}
-                        checked={colorItem.checked}
-                        disabled={this.state.history.length > 1 || !this.state.playerNum || colorItem.disabled}
-                      />
-                      <button
-                        style={{
-                          opacity: (this.state.history.length > 1 || !this.state.playerNum || colorItem.disabled) ? 0.4 : 1,
-                          backgroundImage: `radial-gradient(at 80px 80px, rgba(0,0,0,0), ${colorItem.colorValue})`
-                        }}
-                        onClick={() => this.chooseCircleColor(colorItem.colorValue)}
-                        disabled={this.state.history.length > 1 || !this.state.playerNum || colorItem.disabled}
-                      />
-                    </div>
-                  )
-                })
-              }
-            </div>
-          </div>
+          <ChooseColorsArea
+            availableColors={this.state.availableColors}
+            chooseCircleColor={(color) => this.chooseCircleColor(color)}
+            history={this.state.history}
+            playerNum={this.state.playerNum}
+          />
           {/*旋转棋盘*/}
           <div className="rotate-board">
             <h4>旋转棋盘</h4>
