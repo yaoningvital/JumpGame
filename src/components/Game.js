@@ -28,7 +28,6 @@ class Game extends React.Component {
     this.state = {
       r: 20, // 棋子半径
       a: 20, // 棋子与同轴线上相邻棋子边缘的最短距离
-      circlesOrigin: circlesDefault,
       playerNum: 0,// 当前玩家数
       boardRotateDirection: '+', // 棋盘旋转的方向（顺时针+ ，逆时针-）
       boardRotateDegNum: 0, // 棋盘旋转的角度
@@ -505,7 +504,7 @@ class Game extends React.Component {
     // A: 点击了棋子
     if (circleData.color !== '#ddd') {
       // 当前玩家的颜色
-      let currentPlayerColor = selectedColors[(this.state.history.length - 1) % selectedColors.length]
+      let currentPlayerColor = selectedColors[this.state.currentStep % selectedColors.length]
       // 只能点当前玩家的棋子
       if (circleData.color !== currentPlayerColor) return
       
@@ -517,14 +516,15 @@ class Game extends React.Component {
       // 棋盘中有效点击播放声音
       this.playAudio()
       
-      // 1、更新 this.state.currentSelectedCircle ，改变被选中的棋子的样式
-      this.setState({
-        currentSelectedCircle: circleData
-      })
-      // 2、找到 当前选中的棋子 的落子点
+      // 1、找到 当前选中的棋子 的落子点
       let ableReceiveCells = this.findAbleReceiveCells(circleData)
+      
+      // 2、更新 this.state，
+      // ableReceiveCells: 显示落子点
+      // currentSelectedCircle : 改变被选中的棋子的样式
       this.setState({
-        ableReceiveCells
+        ableReceiveCells,
+        currentSelectedCircle: circleData
       })
     }
     
@@ -853,11 +853,10 @@ class Game extends React.Component {
    */
   handleStepConfirm () {
     let newCircles = _.cloneDeep(this.state.cashCirclesArr[this.state.cashCirclesArr.length - 1])
-    let history = _.cloneDeep(this.state.history)
+    let history = _.cloneDeep(this.state.history.slice(0, this.state.currentStep + 1))
     history.push({
       circles: newCircles
     })
-    
     
     this.setState({
       currentStep: this.state.currentStep + 1,
@@ -881,6 +880,19 @@ class Game extends React.Component {
       ableReceiveCells: []
     })
   }
+  
+  /**
+   * 判断 南方10子 是否都是给定的颜色
+   * @param color ： 给定的颜色
+   * @return : 返回 是或否
+   */
+  // southTenAreTheSameGivenColor (color) {
+  //   for (let i = circles.length - 4; i < circles.length; i++) {
+  //     for (let j = 0; j < circles[i].length; j++) {
+  //       circles[i][j].color = choosedColors[0]
+  //     }
+  //   }
+  // }
 }
 
 export default Game
