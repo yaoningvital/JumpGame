@@ -2,17 +2,17 @@ import React from 'react'
 import { getChoosedColorArr } from '../utils'
 
 function NextPlayer (props) {
-  let {availableColors, history, r} = props
+  let {availableColors, currentStep, r} = props
   let selectedColors = getChoosedColorArr(availableColors)
   let nextStepRadius = r * 0.8
   
   
   return (
     <div className="status">
-      <span>下一步：</span>
+      {selectedColors.length > 0 && <span>下一步：</span>}
       {
         selectedColors.map((color, index) => {
-          let isCurrentBtn = index === (history.length - 1) % selectedColors.length
+          let isCurrentBtn = index === currentStep % selectedColors.length
           let nextStepBtnStyle;
           if (isCurrentBtn) {
             nextStepBtnStyle = {
