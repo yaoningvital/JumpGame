@@ -568,13 +568,26 @@ class Game extends React.Component {
         }
         
         // 3、更新 state
+        // cashCirclesArr
         let cashCirclesArr = _.cloneDeep(this.state.cashCirclesArr)
-        if (cashCirclesArr.length > 1 && this.isBoardLayoutTheSame(cashCircles, cashCirclesArr[cashCirclesArr.length - 2])) { // 如果这个棋子的准备走的这一小步，实际上是返回了它的上一步
-          cashCirclesArr = cashCirclesArr.slice(0, cashCirclesArr.length - 1) // 缓存小步的数组回到上一步的布局
-        } else { // 如果不是
-          cashCirclesArr.push(cashCircles) // 缓存小步的数组中新增一步
+        
+        if (cashCirclesArr.length === 1) { // 如果是这个棋子的 首步，那么这一步（cashCircles）肯定跟初始状态不同，应该直接push进 小步状态数组（cashCirclesArr）
+          cashCirclesArr.push(cashCircles)
+        } else { // 这个棋子至少走出过1步了，那么这时应该判断 这一步 是否跟它在这一大步中走过的位置有重复，如果有重复，就相当于它又回退到了这一步
+          let hasDuplicateSmallStep = false
+          for (let i = cashCirclesArr.length - 2; i >= 0; i--) {
+            if (this.isBoardLayoutTheSame(cashCirclesArr[i], cashCircles)) {
+              cashCirclesArr = cashCirclesArr.slice(0, i + 1)
+              hasDuplicateSmallStep = true
+              break
+            }
+          }
+          if (!hasDuplicateSmallStep) {
+            cashCirclesArr.push(cashCircles)
+          }
         }
         
+        // currentSelectedCircle
         let currentSelectedCircle = _.cloneDeep(circleData)
         currentSelectedCircle.color = this.state.currentSelectedCircle.color
         
