@@ -2,17 +2,21 @@ import React from 'react'
 import { getChoosedColorArr } from '../utils'
 
 function NextPlayer (props) {
-  let {availableColors, currentStep, r} = props
-  let selectedColors = getChoosedColorArr(availableColors)
+  let {
+    availableColors, currentStep, r,
+    getNotCompleteColors, ranking
+  } = props
+  let choosedColors = getChoosedColorArr(availableColors)
+  let notCompleteColors = getNotCompleteColors(choosedColors, ranking)
   let nextStepRadius = r * 0.8
   
   
   return (
     <div className="status">
-      {selectedColors.length > 0 && <span>下一步：</span>}
+      {notCompleteColors.length > 0 && <span>下一步：</span>}
       {
-        selectedColors.map((color, index) => {
-          let isCurrentBtn = index === currentStep % selectedColors.length
+        notCompleteColors.map((color, index) => {
+          let isCurrentBtn = index === currentStep % notCompleteColors.length
           let nextStepBtnStyle;
           if (isCurrentBtn) {
             nextStepBtnStyle = {
