@@ -187,5 +187,14 @@
 
 
     }
+
+    .history-steps {
+      padding-bottom: 20px;
+
+      > div {
+        max-height: 150px;
+        overflow-y: scroll;
+      }
+    }
   }
 }
