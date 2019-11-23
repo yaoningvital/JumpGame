@@ -37,7 +37,9 @@ class Game extends React.Component {
       currentStep: 0,
       history: [
         { // 一条棋盘棋子布局的记录
-          circles: circlesDefault
+          circles: circlesDefault, // 棋子布局
+          currentPlayingColor: '', // 当前玩家的颜色
+          ranking: [], // 已经完成游戏的颜色
         },
       ],
       cashCirclesArr: [circlesDefault], // 记录下棋过程中的circles，只有在点击“确定”之后，这个数组中的最后一条circles记录才会push到history中
@@ -869,14 +871,18 @@ class Game extends React.Component {
   handleStepConfirm () {
     let newCircles = _.cloneDeep(this.state.cashCirclesArr[this.state.cashCirclesArr.length - 1])
     let history = _.cloneDeep(this.state.history.slice(0, this.state.currentStep + 1))
-    history.push({
-      circles: newCircles
-    })
+    
     
     let newRanking = this.updateRanking(newCircles, this.state.ranking)
     let newCurrentStep = this.state.currentStep + 1
     
     let newCurrentPlayingColor = this.getNewCurrentPlayingColor(this.state.ranking, newRanking, this.state.currentPlayingColor)
+    
+    history.push({
+      circles: newCircles,
+      currentPlayingColor: newCurrentPlayingColor,
+      ranking: newRanking,
+    })
     
     this.setState({
       currentStep: newCurrentStep,
@@ -888,7 +894,7 @@ class Game extends React.Component {
       ableReceiveCells: []
     })
   }
-
+  
   /**
    * 点击历史记录回退按钮
    * @param move
@@ -899,14 +905,22 @@ class Game extends React.Component {
     if (move === 0) {
       history = [
         {
-          circles: temporaryCircles
+          circles: temporaryCircles,
+          currentPlayingColor: getChoosedColorArr(this.state.availableColors)[0],
+          ranking: []
         }
       ]
     }
+    
+    let currentPlayingColor = history[move].currentPlayingColor
+    let ranking = history[move].ranking
+    
     this.setState({
       history,
       currentStep: move,
-      cashCirclesArr: [temporaryCircles],
+      currentPlayingColor, // 更新当前玩家颜色
+      ranking, // 更新已经完成游戏的颜色
+      cashCirclesArr: [temporaryCircles], // 更新棋子布局
       currentSelectedCircle: null,
       ableReceiveCells: []
     })
