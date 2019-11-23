@@ -44,6 +44,7 @@ class Game extends React.Component {
       currentSelectedCircle: null, // 当前被选中的棋子 {}
       ableReceiveCells: [], // 当前正在走的棋子 的 落子点
       ranking: [],// 当前排名
+      currentPlayingColor: '', // 当前玩家的颜色
     }
   }
   
@@ -72,6 +73,7 @@ class Game extends React.Component {
             r={this.state.r}
             getNotCompleteColors={this.getNotCompleteColors}
             ranking={this.state.ranking}
+            currentPlayingColor={this.state.currentPlayingColor}
           />
           
           {/*确认按钮*/}
@@ -163,6 +165,8 @@ class Game extends React.Component {
     // 拿到颜色面板中 已经选择的颜色
     let choosedColorsArr = getChoosedColorArr(availableColors)
     
+    let currentPlayingColor = choosedColorsArr[0]
+    
     // A : 如果 已选择颜色数量 > 新给定的玩家数，自动将已选择的颜色中后边多余数量的丢弃
     if (choosedColorsArr.length > playerNum) {
       
@@ -194,6 +198,7 @@ class Game extends React.Component {
     // 4、更新显示的“当前玩家数”
     this.setState({
       playerNum,
+      currentPlayingColor,
       availableColors,
       currentSelectedCircle: null,
       ableReceiveCells: []
@@ -300,8 +305,12 @@ class Game extends React.Component {
     let choosedColors = getChoosedColorArr(availableColors)
     this.updateCirclesColorInBoard(choosedColors)
     
+    // 4、更新 当前玩家的颜色
+    let currentPlayingColor = choosedColors[0]
+    
     this.setState({
-      availableColors
+      availableColors,
+      currentPlayingColor
     })
     
   }
@@ -511,10 +520,8 @@ class Game extends React.Component {
     
     // A: 点击了棋子
     if (circleData.color !== '#ddd') {
-      // 当前玩家的颜色
-      let currentPlayerColor = selectedColors[this.state.currentStep % selectedColors.length]
       // 只能点当前玩家的棋子
-      if (circleData.color !== currentPlayerColor) return
+      if (circleData.color !== this.state.currentPlayingColor) return
       
       // 已经有当前玩家的棋子走出去至少一小步了，其他棋子不能再走；
       // 而对于已经走出去至少一小步的棋子，点它本身是没有反应的。
@@ -866,18 +873,22 @@ class Game extends React.Component {
       circles: newCircles
     })
     
-    let ranking = this.updateRanking(newCircles, this.state.ranking)
+    let newRanking = this.updateRanking(newCircles, this.state.ranking)
+    let newCurrentStep = this.state.currentStep + 1
+    
+    let newCurrentPlayingColor = this.getNewCurrentPlayingColor(this.state.ranking, newRanking, this.state.currentPlayingColor)
     
     this.setState({
-      currentStep: this.state.currentStep + 1,
+      currentStep: newCurrentStep,
+      currentPlayingColor: newCurrentPlayingColor,
       history,
       cashCirclesArr: [newCircles],
-      ranking,
+      ranking: newRanking,
       currentSelectedCircle: null,
       ableReceiveCells: []
     })
   }
-  
+
   /**
    * 点击历史记录回退按钮
    * @param move
@@ -1176,6 +1187,53 @@ class Game extends React.Component {
     }
     
     return notCompleteColors
+  }
+  
+  /**
+   * 找到新的 下一步玩家颜色 ，返回
+   * @param oldRanking : 老的已完成游戏的颜色
+   * @param newRanking : 新的已完成游戏的颜色
+   * @param oldCurrentPlayingColor ： 老的当前玩家颜色
+   */
+  getNewCurrentPlayingColor (oldRanking, newRanking, oldCurrentPlayingColor) {
+    let newCurrentPlayingColor = ''
+    let choosedColors = getChoosedColorArr(this.state.availableColors) // 已经选择的颜色
+    
+    // 如果没有新的颜色完成游戏
+    if (oldRanking.length === newRanking.length) {
+      let notCompleteColors = this.getNotCompleteColors(choosedColors, oldRanking)  // 没有完成游戏的颜色
+      // 找到老的当前玩家颜色所在的索引
+      let oldCurrentPlayingColorIndex = 0;
+      for (let i = 0; i < notCompleteColors.length; i++) {
+        if (notCompleteColors[i] === oldCurrentPlayingColor) {
+          oldCurrentPlayingColorIndex = i
+          break
+        }
+      }
+      let newCurrentPlayingColorIndex = (oldCurrentPlayingColorIndex + 1) % notCompleteColors.length
+      newCurrentPlayingColor = notCompleteColors[newCurrentPlayingColorIndex]
+    }
+    // 如果有新的颜色完成游戏
+    else if (oldRanking.length < newRanking.length) {
+      let newCompleteColor = newRanking[newRanking.length - 1] // 新完成游戏的颜色
+      let oldNotCompleteColors = this.getNotCompleteColors(choosedColors, oldRanking)  // 老的还没有完成游戏的颜色
+      // 找到 新完成游戏的颜色 在老的还没有完成游戏的颜色数组 中 的索引
+      let newCompleteColorIndexInOldNotComplete = 0;
+      for (let i = 0; i < oldNotCompleteColors.length; i++) {
+        if (oldNotCompleteColors[i] === newCompleteColor) {
+          newCompleteColorIndexInOldNotComplete = i
+          break
+        }
+      }
+      if (oldNotCompleteColors.length === 1) { // 最后一个未完成的也完成了
+        newCurrentPlayingColor = ''
+      } else if (oldNotCompleteColors.length > 1) {
+        let newCurrentPlayingColorIndex = (newCompleteColorIndexInOldNotComplete + 1) % oldNotCompleteColors.length
+        newCurrentPlayingColor = oldNotCompleteColors[newCurrentPlayingColorIndex]
+      }
+    }
+    
+    return newCurrentPlayingColor
   }
 }
 

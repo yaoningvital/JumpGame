@@ -206,7 +206,7 @@ export const COLORS = [
 ]
 
 /**
- * 返回当前已选择的颜色组成的数组
+ * 返回当前已选择的颜色组成的数组 ['red','orange',...]
  * @param availableColors : 颜色面板数组
  * @returns {[]}
  */
