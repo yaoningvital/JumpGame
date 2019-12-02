@@ -25,6 +25,7 @@ class Game extends React.Component {
     this.handleClickCircle = this.handleClickCircle.bind(this)
     this.handleStepConfirm = this.handleStepConfirm.bind(this)
     this.handleStepBackTo = this.handleStepBackTo.bind(this)
+    this.handleChange = this.handleChange.bind(this)
     
     this.state = {
       r: 20, // 棋子半径
@@ -47,12 +48,12 @@ class Game extends React.Component {
       ableReceiveCells: [], // 当前正在走的棋子 的 落子点
       ranking: [],// 当前排名
       currentPlayingColor: '', // 当前玩家的颜色
+      value: ['grapefruit', 'coconut']
     }
   }
   
   render () {
     let currentCircles = this.state.cashCirclesArr[this.state.cashCirclesArr.length - 1]
-    
     return (
       <div className="game">
         {/*棋盘*/}
@@ -127,6 +128,7 @@ class Game extends React.Component {
       </div>
     )
   }
+  
   
   // var availableColors=[
   //   {
@@ -1249,6 +1251,17 @@ class Game extends React.Component {
     
     return newCurrentPlayingColor
   }
+  
+  handleChange (event) {
+    console.log('this.state.value:', this.state.value)
+    let newValue = this.state.value.slice()
+    newValue.push(event.target.value)
+    
+    this.setState({
+      value: newValue
+    });
+  }
 }
+
 
 export default Game

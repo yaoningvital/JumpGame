@@ -14,25 +14,14 @@
     position: relative;
 
     .board {
-      //animation:rotate 1s ease-in-out forwards;
-
-      //width: 680px;
-      //height: 680px;
-      //border-radius: 340px;
       margin: auto;
       background: url("./assets/images/board-bg3.jpg");
       background-size: cover;
       box-shadow: 0 0 20px #bbb;
-
-      //transform:rotate(7deg);
-      //-ms-transform:rotate(7deg); 	/* IE 9 */
-      //-moz-transform:rotate(7deg); 	/* Firefox */
-      //-webkit-transform:rotate(7deg); /* Safari 和 Chrome */
-      //-o-transform:rotate(7deg);
+      transform: rotate(0deg);
+      transition: transform 0.3s;
 
       .board-row {
-        //text-align: center;
-        //height: 40px;
         display: flex;
         flex-direction: row;
         flex-wrap: nowrap;
@@ -40,12 +29,8 @@
         align-items: center;
 
         button {
-          //width: 40px;
-          //height: 40px;
-          //border-radius: 20px;
           border-style: none;
           outline: none;
-          //background-image: radial-gradient(at 80px 80px, rgba(0,0,0,0), red);
           margin: 0;
 
           &:hover {
